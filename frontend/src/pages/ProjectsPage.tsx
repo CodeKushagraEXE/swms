@@ -7,6 +7,7 @@ import { setProjects, addProject, updateProject, removeProject } from '../store/
 import Modal from '../components/common/Modal';
 import { LoadingScreen } from '../components/common/Spinner';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../utils/apiError';
 
 interface ProjectForm { name: string; description: string; memberIds: number[]; }
 
@@ -68,13 +69,16 @@ export default function ProjectsPage() {
   const [form, setForm] = useState<ProjectForm>({ name: '', description: '', memberIds: [] });
   const [users, setUsers] = useState<User[]>([]);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
-      projectsApi.getAll().then(r => dispatch(setProjects(r.data))),
+      projectsApi.getAll().then(r => { dispatch(setProjects(r.data)); setLoadError(null); }),
       usersApi.getAll().then(r => setUsers(r.data)),
-    ]).finally(() => setLoading(false));
-  }, []);
+    ])
+      .catch(err => setLoadError(getApiErrorMessage(err, 'Failed to load projects')))
+      .finally(() => setLoading(false));
+  }, [dispatch]);
 
   const openCreate = () => { setEditing(null); setForm({ name: '', description: '', memberIds: [] }); setShowModal(true); };
   const openEdit = (p: Project) => {
@@ -134,7 +138,12 @@ export default function ProjectsPage() {
         <button onClick={openCreate} className="btn-primary">+ New Project</button>
       </div>
 
-      {projects.length === 0 ? (
+      {loadError ? (
+        <div className="card p-12 text-center max-w-lg mx-auto space-y-3">
+          <p className="font-semibold text-gray-900 dark:text-white">Could not load projects</p>
+          <p className="text-sm text-gray-500">{loadError}</p>
+        </div>
+      ) : projects.length === 0 ? (
         <div className="card p-16 text-center">
           <span className="text-5xl block mb-4">📁</span>
           <h3 className="text-lg font-semibold mb-2">No projects yet</h3>

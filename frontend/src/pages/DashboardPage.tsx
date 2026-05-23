@@ -4,6 +4,7 @@ import { dashboardApi } from '../services/api';
 import { DashboardStats } from '../types';
 import { LoadingScreen } from '../components/common/Spinner';
 import { useAppSelector } from '../hooks/useAppDispatch';
+import { getApiErrorMessage } from '../utils/apiError';
 
 function StatCard({ label, value, icon, color }: { label: string; value: number; icon: string; color: string }) {
   return (
@@ -31,14 +32,28 @@ function ProgressBar({ value, max, color = 'bg-blue-500' }: { value: number; max
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const user = useAppSelector(s => s.auth.user);
 
   useEffect(() => {
-    dashboardApi.getStats().then(r => setStats(r.data)).catch(console.error).finally(() => setLoading(false));
+    dashboardApi.getStats()
+      .then(r => { setStats(r.data); setError(null); })
+      .catch(err => setError(getApiErrorMessage(err, 'Failed to load dashboard stats')))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <LoadingScreen />;
-  if (!stats) return <div className="text-center text-gray-500">Failed to load stats</div>;
+  if (error || !stats) {
+    return (
+      <div className="max-w-lg mx-auto card p-8 text-center space-y-3 mt-8">
+        <p className="text-lg font-semibold text-gray-900 dark:text-white">Dashboard unavailable</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{error || 'Failed to load stats'}</p>
+        <p className="text-xs text-gray-400">
+          Deploy the Spring API on Render, set <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">BACKEND_URL</code> on Vercel, then redeploy both.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
