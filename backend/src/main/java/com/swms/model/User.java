@@ -37,6 +37,24 @@ public class User {
     @Builder.Default
     private boolean active = true;
 
+    @Column(length = 30)
+    private String phone;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    @Column(name = "profile_image_url", columnDefinition = "TEXT")
+    private String profileImageUrl;
+
+    @Column(length = 500)
+    private String website;
+
+    @Column(name = "linkedin_url", length = 500)
+    private String linkedinUrl;
+
+    @Column(name = "github_url", length = 500)
+    private String githubUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

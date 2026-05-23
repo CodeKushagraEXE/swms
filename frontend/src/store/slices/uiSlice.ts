@@ -5,7 +5,8 @@ const uiSlice = createSlice({
   reducers: {
     toggleDarkMode: (s) => { s.darkMode = !s.darkMode; localStorage.setItem('darkMode', String(s.darkMode)); },
     toggleSidebar: (s) => { s.sidebarOpen = !s.sidebarOpen; },
+    setSidebarOpen: (s, action: { payload: boolean }) => { s.sidebarOpen = action.payload; },
   },
 });
-export const { toggleDarkMode, toggleSidebar } = uiSlice.actions;
+export const { toggleDarkMode, toggleSidebar, setSidebarOpen } = uiSlice.actions;
 export default uiSlice.reducer;

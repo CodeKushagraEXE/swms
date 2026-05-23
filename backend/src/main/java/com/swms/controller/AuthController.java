@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Authentication")
 public class AuthController {
     @Autowired private AuthService authService;
+    @Autowired private com.swms.service.ProfileService profileService;
 
     @PostMapping("/register")
     @Operation(summary = "Register a new user")
@@ -28,11 +29,8 @@ public class AuthController {
 
     @GetMapping("/me")
     @Operation(summary = "Get current user")
-    public ResponseEntity<Dtos.UserSummary> me(java.security.Principal principal) {
+    public ResponseEntity<Dtos.UserProfileResponse> me(java.security.Principal principal) {
         var user = authService.getCurrentUser(principal.getName());
-        var dto = new Dtos.UserSummary();
-        dto.setId(user.getId()); dto.setName(user.getName());
-        dto.setEmail(user.getEmail()); dto.setRole(user.getRole().name());
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(profileService.getProfile(user));
     }
 }

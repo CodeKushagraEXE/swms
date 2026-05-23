@@ -1,13 +1,16 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
 import { logout } from '../../store/slices/authSlice';
 import { toggleDarkMode, toggleSidebar } from '../../store/slices/uiSlice';
 import toast from 'react-hot-toast';
+import AppBrand from './AppBrand';
+import UserAvatar from './UserAvatar';
 
 export default function Header() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const darkMode = useAppSelector(s => s.ui.darkMode);
+  const sidebarOpen = useAppSelector(s => s.ui.sidebarOpen);
   const user = useAppSelector(s => s.auth.user);
 
   const handleLogout = () => {
@@ -17,19 +20,26 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 shrink-0 z-10">
+    <header className="relative h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 shrink-0 z-50">
       <div className="flex items-center gap-4">
         <button
+          type="button"
           onClick={() => dispatch(toggleSidebar())}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 transition-colors"
-          title="Toggle sidebar">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          aria-expanded={sidebarOpen}
+          aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+          title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}>
+          {sidebarOpen ? (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
         </button>
-        <h1 className="text-base font-semibold text-gray-800 dark:text-gray-200 hidden md:block">
-          Smart Workflow Management
-        </h1>
+        <AppBrand />
       </div>
 
       <div className="flex items-center gap-2">
@@ -49,13 +59,16 @@ export default function Header() {
         </button>
 
         <div className="flex items-center gap-2 pl-2 border-l border-gray-200 dark:border-gray-700">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-            {user?.name.charAt(0).toUpperCase()}
-          </div>
-          <div className="hidden sm:block">
-            <p className="text-sm font-medium leading-none">{user?.name}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{user?.role}</p>
-          </div>
+          <Link
+            to="/profile"
+            className="flex items-center gap-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors p-1 -m-1"
+          >
+            <UserAvatar user={user} size="sm" />
+            <div className="hidden sm:block">
+              <p className="text-sm font-medium leading-none">{user?.name}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{user?.role}</p>
+            </div>
+          </Link>
           <button
             onClick={handleLogout}
             className="ml-2 p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

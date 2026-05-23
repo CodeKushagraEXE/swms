@@ -96,6 +96,41 @@ public class Dtos {
         private Long id; private String name; private String email; private String role;
     }
 
+    @Data public static class UserProfileResponse {
+        private Long id;
+        private String name;
+        private String email;
+        private String role;
+        private String phone;
+        private String bio;
+        private String profileImageUrl;
+        private String website;
+        private String linkedinUrl;
+        private String githubUrl;
+        private LocalDateTime createdAt;
+    }
+
+    @Data public static class UpdateProfileRequest {
+        @NotBlank private String name;
+        private String phone;
+        private String bio;
+        private String website;
+        private String linkedinUrl;
+        private String githubUrl;
+    }
+
+    @Data public static class AvatarUploadRequest {
+        @NotBlank private String imageData;
+    }
+
+    @Data public static class ProjectTeamMemberResponse {
+        private Long id;
+        private String name;
+        private String email;
+        private String role;
+        private boolean projectOwner;
+    }
+
     @Data public static class DashboardStats {
         private long totalProjects; private long totalTasks;
         private long todoTasks; private long inProgressTasks; private long doneTasks;

@@ -18,7 +18,7 @@ export default function LoginPage() {
       const { data } = await authApi.login(form);
       dispatch(setCredentials(data));
       toast.success(`Welcome back, ${data.name}!`);
-      navigate('/dashboard');
+      navigate('/home');
     } catch (err: any) {
       const msg =
         err.response?.data?.message ||
@@ -83,8 +83,10 @@ export default function LoginPage() {
               Demo accounts — click to fill:
             </p>
             {[
-              { email: 'manager@swms.com', password: 'manager123', role: 'Manager' },
-              { email: 'dev@swms.com',     password: 'dev123',     role: 'Employee'},
+              { email: 'manager@swms.com',       password: 'manager123', role: 'Manager (demo)' },
+              { email: 'admin@swms.com',         password: 'admin123',   role: 'Admin' },
+              { email: 'sarah.chen@swms.com',    password: 'sarah123',   role: 'Designer' },
+              { email: 'james.wilson@swms.com',  password: 'james123',   role: 'QA' },
             ].map(acc => (
               <button
                 key={acc.email}

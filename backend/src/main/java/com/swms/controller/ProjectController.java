@@ -30,6 +30,12 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getProject(id, authService.getCurrentUser(p.getName())));
     }
 
+    @GetMapping("/{id}/team")
+    @Operation(summary = "Get project team members (admin only)")
+    public ResponseEntity<List<Dtos.ProjectTeamMemberResponse>> getTeam(@PathVariable Long id, Principal p) {
+        return ResponseEntity.ok(projectService.getProjectTeam(id, authService.getCurrentUser(p.getName())));
+    }
+
     @PostMapping
     @Operation(summary = "Create a new project")
     public ResponseEntity<Dtos.ProjectResponse> create(@Valid @RequestBody Dtos.ProjectRequest req, Principal p) {

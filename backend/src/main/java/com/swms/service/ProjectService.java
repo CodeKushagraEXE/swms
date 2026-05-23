@@ -72,6 +72,24 @@ public class ProjectService {
         projectRepo.delete(project);
     }
 
+    @Transactional(readOnly = true)
+    public List<Dtos.ProjectTeamMemberResponse> getProjectTeam(Long projectId, User currentUser) {
+        var project = projectRepo.findById(projectId)
+            .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
+        checkAccess(project, currentUser);
+        if (currentUser.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only admins can view the project team roster");
+        }
+
+        List<Dtos.ProjectTeamMemberResponse> team = new ArrayList<>();
+        team.add(toTeamMember(project.getOwner(), true));
+        project.getMembers().stream()
+            .filter(m -> !m.getId().equals(project.getOwner().getId()))
+            .sorted(Comparator.comparing(User::getName, String.CASE_INSENSITIVE_ORDER))
+            .forEach(m -> team.add(toTeamMember(m, false)));
+        return team;
+    }
+
     @Transactional
     public Dtos.ProjectResponse addMember(Long projectId, Long userId, User currentUser) {
         var project = projectRepo.findById(projectId)
@@ -102,6 +120,16 @@ public class ProjectService {
             dto.setTotalTasks(taskRepo.countByProjectId(p.getId()));
             dto.setCompletedTasks(taskRepo.countByProjectIdAndStatus(p.getId(), Task.Status.DONE));
         }
+        return dto;
+    }
+
+    private Dtos.ProjectTeamMemberResponse toTeamMember(User user, boolean projectOwner) {
+        var dto = new Dtos.ProjectTeamMemberResponse();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole().name());
+        dto.setProjectOwner(projectOwner);
         return dto;
     }
 

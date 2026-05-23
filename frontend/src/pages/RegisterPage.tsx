@@ -20,7 +20,7 @@ export default function RegisterPage() {
       const { data } = await authApi.register(payload);
       dispatch(setCredentials(data));
       toast.success(`Welcome to SWMS, ${data.name}!`);
-      navigate('/dashboard');
+      navigate('/home');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Registration failed');
     } finally {

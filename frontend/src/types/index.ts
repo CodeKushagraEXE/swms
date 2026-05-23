@@ -8,6 +8,26 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  phone?: string | null;
+  bio?: string | null;
+  profileImageUrl?: string | null;
+  website?: string | null;
+  linkedinUrl?: string | null;
+  githubUrl?: string | null;
+  createdAt?: string;
+}
+
+export interface UpdateProfilePayload {
+  name: string;
+  phone?: string;
+  bio?: string;
+  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+}
+
+export interface ProjectTeamMember extends User {
+  projectOwner: boolean;
 }
 
 export interface AuthResponse {

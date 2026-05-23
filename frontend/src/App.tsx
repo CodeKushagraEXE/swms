@@ -10,6 +10,8 @@ import ProjectsPage from './pages/ProjectsPage';
 import KanbanPage from './pages/KanbanPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import AuthAuditPage from './pages/AuthAuditPage';
+import HomePage from './pages/HomePage';
+import ProfilePage from './pages/ProfilePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
@@ -29,14 +31,16 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<Navigate to="/home" replace />} />
+          <Route path="home" element={<HomePage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
           <Route path="projects/:id/board" element={<KanbanPage />} />
           <Route path="admin/auth-audit" element={<AuthAuditPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

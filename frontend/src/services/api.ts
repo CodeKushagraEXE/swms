@@ -24,6 +24,12 @@ export const authApi = {
   login: (d: any) => api.post('/auth/login', d),
   me: () => api.get('/auth/me'),
 };
+export const profileApi = {
+  get: () => api.get('/profile/me'),
+  update: (d: import('../types').UpdateProfilePayload) => api.put('/profile/me', d),
+  uploadAvatar: (imageData: string) => api.put('/profile/me/avatar', { imageData }),
+  removeAvatar: () => api.delete('/profile/me/avatar'),
+};
 export const projectsApi = {
   getAll: () => api.get('/projects'),
   getById: (id: number) => api.get(`/projects/${id}`),
@@ -31,6 +37,7 @@ export const projectsApi = {
   update: (id: number, d: any) => api.put(`/projects/${id}`, d),
   delete: (id: number) => api.delete(`/projects/${id}`),
   addMember: (pid: number, uid: number) => api.post(`/projects/${pid}/members/${uid}`),
+  getTeam: (id: number) => api.get(`/projects/${id}/team`),
 };
 export const tasksApi = {
   getByProject: (pid: number, search?: string, status?: string) =>

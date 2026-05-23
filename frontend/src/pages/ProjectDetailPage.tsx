@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { projectsApi, tasksApi, logsApi, usersApi } from '../services/api';
-import { Project, Task, ActivityLog, User } from '../types';
+import { Project, ProjectTeamMember, Task, ActivityLog, User } from '../types';
 import { LoadingScreen } from '../components/common/Spinner';
 import TaskModal from '../components/tasks/TaskModal';
 import { useAppDispatch, useAppSelector } from '../hooks/useAppDispatch';
@@ -17,6 +17,19 @@ const PRIORITY_BADGE: Record<string, string> = {
   LOW: 'badge-low', MEDIUM: 'badge-medium', HIGH: 'badge-high', CRITICAL: 'badge-critical',
 };
 
+function projectToTeam(project: Project): ProjectTeamMember[] {
+  const seen = new Set<number>();
+  const team: ProjectTeamMember[] = [];
+  const add = (user: User, projectOwner: boolean) => {
+    if (seen.has(user.id)) return;
+    seen.add(user.id);
+    team.push({ ...user, projectOwner });
+  };
+  add(project.owner, true);
+  project.members.forEach(m => add(m, false));
+  return team;
+}
+
 const ACTION_ICONS: Record<string, string> = {
   TASK_CREATED: '✨', TASK_UPDATED: '✏️', TASK_DELETED: '🗑️', TASK_STATUS_CHANGED: '🔄',
   TASK_ASSIGNED: '👤', DEPENDENCY_ADDED: '🔗', DEPENDENCY_REMOVED: '🔓',
@@ -29,25 +42,40 @@ export default function ProjectDetailPage() {
   const projectId = Number(id);
   const dispatch = useAppDispatch();
   const tasks = useAppSelector(s => s.tasks.byProject[projectId] || []);
+  const currentUser = useAppSelector(s => s.auth.user);
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   const [project, setProject] = useState<Project | null>(null);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [team, setTeam] = useState<ProjectTeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [activeTab, setActiveTab] = useState<'tasks' | 'logs'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'team' | 'logs'>('tasks');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
 
   useEffect(() => {
-    Promise.all([
-      projectsApi.getById(projectId).then(r => setProject(r.data)),
+    setLoading(true);
+    const requests: Promise<unknown>[] = [
+      projectsApi.getById(projectId).then(r => {
+        setProject(r.data);
+        if (isAdmin) setTeam(projectToTeam(r.data));
+      }),
       tasksApi.getByProject(projectId).then(r => dispatch(setTasks({ projectId, tasks: r.data }))),
       logsApi.getProjectLogs(projectId).then(r => setLogs(r.data)),
       usersApi.getAll().then(r => setUsers(r.data)),
-    ]).finally(() => setLoading(false));
-  }, [projectId]);
+    ];
+    if (isAdmin) {
+      requests.push(
+        projectsApi.getTeam(projectId)
+          .then(r => { if (r.data?.length) setTeam(r.data); })
+          .catch(() => { /* use projectToTeam fallback above */ })
+      );
+    }
+    Promise.all(requests).finally(() => setLoading(false));
+  }, [projectId, isAdmin, dispatch]);
 
   const refreshLogs = () => logsApi.getProjectLogs(projectId).then(r => setLogs(r.data));
 
@@ -141,11 +169,15 @@ export default function ProjectDetailPage() {
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <div className="flex gap-1">
-          {(['tasks', 'logs'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize
-                ${activeTab === tab ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
-              {tab === 'tasks' ? `📋 Tasks (${tasks.length})` : `📜 Activity (${logs.length})`}
+          {([
+            { id: 'tasks' as const, label: `📋 Tasks (${tasks.length})` },
+            ...(isAdmin ? [{ id: 'team' as const, label: `👥 Team (${team.length})` }] : []),
+            { id: 'logs' as const, label: `📜 Activity (${logs.length})` },
+          ]).map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+                ${activeTab === tab.id ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
+              {tab.label}
             </button>
           ))}
         </div>
@@ -226,6 +258,52 @@ export default function ProjectDetailPage() {
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Team Tab (admin) */}
+      {activeTab === 'team' && isAdmin && (
+        <div className="card overflow-hidden">
+          {team.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">No team members on this project</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                  {['Member', 'Email', 'System role', 'Project role'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {team.map(member => (
+                  <tr key={member.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shrink-0">
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="font-medium">{member.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{member.email}</td>
+                    <td className="px-4 py-3">
+                      <span className="badge bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">{member.role}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {member.projectOwner ? (
+                        <span className="badge bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Project owner</span>
+                      ) : (
+                        <span className="badge bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Team member</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       )}
